@@ -1,0 +1,32 @@
+---
+- name: Configure Prometheus on host mine
+  hosts: mine
+  become: yes
+# Раскомментить для смены значений
+  #vars:
+    #PROMETHEUS_VERSION: "3.0.0"
+    #PROMETHEUS_FOLDER_CONFIG: "/etc/prometheus"
+    #PROMETHEUS_FOLDER_TSDATA: "/etc/prometheus/data"
+  tasks:
+    - name: Run ubuntu_setup role
+      include_role:
+        name: ubuntu_setup
+
+    - name: Run prometheus_install role
+      include_role:
+        name: prometheus_install
+
+    - name: Open port 9090 in UFW
+      ansible.builtin.ufw:
+        rule: allow
+        port: 9090
+        proto: tcp
+
+    - name: Reload UFW to apply changes
+      command: ufw reload
+
+    - name: Reboot Ubuntu system
+      ansible.builtin.reboot:
+        msg: "Reboot initiated by Ansible after Prometheus setup."
+        reboot_timeout: 3
+      ignore_errors: yes

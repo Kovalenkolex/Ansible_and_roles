@@ -1,0 +1,22 @@
+---
+- name: Setup Minecraft Server
+  hosts: mine
+  become: yes
+  handlers:
+    - include_tasks: handlers/restart_ufw.yml
+
+  tasks:
+    - name: Run ubuntu_setup role
+      import_role:
+        name: ubuntu_setup
+
+    - name: Add port to UFW
+      ufw:
+        rule: allow
+        port: 25565
+        proto: tcp
+      notify: Restart UFW
+
+    - name: Run mine_server role
+      import_role:
+        name: mine_server

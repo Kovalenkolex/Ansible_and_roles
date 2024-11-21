@@ -1,0 +1,108 @@
+---
+- name: Install required packages
+  apt:
+    name:
+      - apt-transport-https
+      - software-properties-common
+      - wget
+    state: present
+  become: yes
+
+- name: Create keyrings directory
+  file:
+    path: /etc/apt/keyrings/
+    state: directory
+    mode: '0755'
+  become: yes
+
+- name: Add Grafana GPG key
+  ansible.builtin.shell: |
+    wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor > /etc/apt/keyrings/grafana.gpg
+  args:
+    creates: /etc/apt/keyrings/grafana.gpg
+  become: yes
+
+- name: Add Grafana repository
+  ansible.builtin.shell: |
+    echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" >> /etc/apt/sources.list.d/grafana.list
+  args:
+    creates: /etc/apt/sources.list.d/grafana.list
+  become: yes
+
+- name: Update package list
+  apt:
+    update_cache: yes
+  become: yes
+
+- name: Install additional dependencies
+  apt:
+    name:
+      - adduser
+      - libfontconfig1
+      - musl
+    state: present
+  become: yes
+
+- name: Download Grafana package
+  get_url:
+    url: "https://dl.grafana.com/oss/release/grafana_{{ GRAFANA_VERSION }}_amd64.deb"
+    dest: "/tmp/grafana_{{ GRAFANA_VERSION }}_amd64.deb"
+  become: yes
+
+- name: Install Grafana package
+  ansible.builtin.shell: |
+    dpkg -i /tmp/grafana_{{ GRAFANA_VERSION }}_amd64.deb
+  become: yes
+
+- name: Add Grafana binary to PATH
+  lineinfile:
+    path: /etc/profile
+    line: "export PATH=/usr/share/grafana/bin:$PATH"
+    state: present
+  become: yes
+
+- name: Create Grafana provisioning directory
+  file:
+    path: /etc/grafana/provisioning/datasources
+    state: directory
+    mode: '0755'
+  become: yes
+
+- name: Configure Prometheus as Grafana datasource
+  copy:
+    dest: /etc/grafana/provisioning/datasources/prometheus.yaml
+    content: |
+      apiVersion: 1
+
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://{{ PROMETHEUS_IP }}:9090
+  become: yes
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+  become: yes
+
+- name: Enable Grafana server
+  systemd:
+    name: grafana-server
+    enabled: yes
+  become: yes
+
+- name: Start Grafana server
+  systemd:
+    name: grafana-server
+    state: started
+  become: yes
+
+- name: Check Grafana server status
+  ansible.builtin.shell: systemctl status grafana-server --no-pager
+  register: grafana_status
+  ignore_errors: yes
+  become: yes
+
+- debug:
+    msg: "{{ grafana_status.stdout }}"
+

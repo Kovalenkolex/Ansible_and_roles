@@ -1,0 +1,30 @@
+---
+- name: Configure Grafana on host
+  hosts: mine
+  become: yes
+  #vars:
+    #GRAFANA_VERSION: "10.3.1"
+    #GRAFANA_IP: "192.168.1.1"
+  tasks:
+    - name: Run ubuntu_setup role
+      include_role:
+        name: ubuntu_setup
+
+    - name: Run grafana_install role
+      include_role:
+        name: grafana_install
+
+    - name: Open port 9090 in UFW
+      ansible.builtin.ufw:
+        rule: allow
+        port: 9090
+        proto: tcp
+
+    - name: Reload UFW to apply changes
+      command: ufw reload
+
+    - name: Reboot Ubuntu system
+      ansible.builtin.reboot:
+        msg: "Reboot initiated by Ansible after Grafana setup."
+        reboot_timeout: 3
+      ignore_errors: yes

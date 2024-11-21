@@ -1,0 +1,66 @@
+- name: Download Node Exporter archive
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v{{ NODE_EXPORTER_VERSION }}/node_exporter-{{ NODE_EXPORTER_VERSION }}.linux-amd64.tar.gz"
+    dest: "/tmp/node_exporter-{{ NODE_EXPORTER_VERSION }}.linux-amd64.tar.gz"
+
+- name: Extract Node Exporter archive
+  ansible.builtin.unarchive:
+    src: "/tmp/node_exporter-{{ NODE_EXPORTER_VERSION }}.linux-amd64.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+
+- name: Move Node Exporter binary to /usr/bin/
+  ansible.builtin.command:
+    cmd: mv /tmp/node_exporter-{{ NODE_EXPORTER_VERSION }}.linux-amd64/node_exporter /usr/bin/
+
+- name: Clean /tmp directory
+  ansible.builtin.shell: |
+    rm -rf /tmp/node_exporter*
+
+- name: Create Node Exporter user
+  user:
+    name: node_exporter
+    shell: /bin/false
+    system: yes
+
+- name: Set ownership for Node Exporter binary
+  file:
+    path: /usr/bin/node_exporter
+    owner: node_exporter
+    group: node_exporter
+    state: file
+
+- name: Create Node Exporter systemd service file
+  copy:
+    dest: /etc/systemd/system/node_exporter.service
+    content: |
+      [Unit]
+      Description=Prometheus Node Exporter
+      After=network.target
+
+      [Service]
+      User=node_exporter
+      Group=node_exporter
+      Type=simple
+      Restart=on-failure
+      ExecStart=/usr/bin/node_exporter
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd manager configuration
+  command: systemctl daemon-reload
+
+- name: Start Node Exporter service
+  service:
+    name: node_exporter
+    state: started
+    enabled: yes
+
+- name: Check Node Exporter version
+  command: node_exporter --version
+  register: node_exporter_version_output
+
+- name: Display Node Exporter version
+  debug:
+    msg: "{{ node_exporter_version_output.stdout }}"

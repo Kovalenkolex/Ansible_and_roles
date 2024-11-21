@@ -1,0 +1,107 @@
+- name: Ensure Prometheus configuration directory exists
+  file:
+    path: "{{ PROMETHEUS_FOLDER_CONFIG }}"
+    state: directory
+    mode: '0755'
+
+- name: Ensure Prometheus data directory exists
+  file:
+    path: "{{ PROMETHEUS_FOLDER_TSDATA }}"
+    state: directory
+    mode: '0755'
+
+- name: Download Prometheus archive
+  get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ PROMETHEUS_VERSION }}/prometheus-{{ PROMETHEUS_VERSION }}.linux-amd64.tar.gz"
+    dest: "/tmp/prometheus-{{ PROMETHEUS_VERSION }}.linux-amd64.tar.gz"
+
+- name: Extract Prometheus archive
+  ansible.builtin.unarchive:
+    src: "/tmp/prometheus-{{ PROMETHEUS_VERSION }}.linux-amd64.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+
+- name: Move prometheus binary to /usr/bin/
+  ansible.builtin.command:
+    cmd: mv /tmp/prometheus-{{ PROMETHEUS_VERSION }}.linux-amd64/prometheus /usr/bin/
+
+- name: Clean /tmp directory
+  ansible.builtin.shell: |
+    rm -rf /tmp/prometheus*
+
+- name: Create Prometheus configuration file
+  copy:
+    dest: "{{ PROMETHEUS_FOLDER_CONFIG }}/prometheus.yml"
+    content: |
+      global:
+        scrape_interval: 15s
+
+      scrape_configs:
+        - job_name: "prometheus"
+          static_configs:
+            - targets: ["localhost:9090"]
+
+- name: Create Prometheus user
+  user:
+    name: prometheus
+    shell: /bin/false
+    system: yes
+
+- name: Set ownership for Prometheus binary
+  file:
+    path: /usr/bin/prometheus
+    owner: prometheus
+    group: prometheus
+    state: file
+
+- name: Set ownership for Prometheus configuration directory
+  file:
+    path: "{{ PROMETHEUS_FOLDER_CONFIG }}"
+    owner: prometheus
+    group: prometheus
+    state: directory
+    recurse: yes
+
+- name: Set ownership for Prometheus data directory
+  file:
+    path: "{{ PROMETHEUS_FOLDER_TSDATA }}"
+    owner: prometheus
+    group: prometheus
+    state: directory
+
+- name: Create Prometheus systemd service file
+  copy:
+    dest: /etc/systemd/system/prometheus.service
+    content: |
+      [Unit]
+      Description=Prometheus Server
+      After=network.target
+
+      [Service]
+      User=prometheus
+      Group=prometheus
+      Type=simple
+      Restart=on-failure
+      ExecStart=/usr/bin/prometheus \
+        --config.file       {{ PROMETHEUS_FOLDER_CONFIG }}/prometheus.yml \
+        --storage.tsdb.path {{ PROMETHEUS_FOLDER_TSDATA }}
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd manager configuration
+  command: systemctl daemon-reload
+
+- name: Start Prometheus service
+  service:
+    name: prometheus
+    state: started
+    enabled: yes
+
+- name: Check Prometheus version
+  command: prometheus --version
+  register: prometheus_version_output
+
+- name: Display Prometheus version
+  debug:
+    msg: "{{ prometheus_version_output.stdout }}"
