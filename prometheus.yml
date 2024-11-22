@@ -1,6 +1,6 @@
 ---
 - name: Configure Prometheus on host mine
-  hosts: mine
+  hosts: host
   become: yes
 # Раскомментить для смены значений
   #vars:
@@ -8,9 +8,13 @@
     #PROMETHEUS_FOLDER_CONFIG: "/etc/prometheus"
     #PROMETHEUS_FOLDER_TSDATA: "/etc/prometheus/data"
   tasks:
-    - name: Run ubuntu_setup role
-      include_role:
-        name: ubuntu_setup
+    #- name: Run ubuntu_setup role
+     # include_role:
+      #  name: ubuntu_setup
+
+    - name: Display a message
+      ansible.builtin.debug:
+        msg: "раскомменть vars для замены версии и места хранения файлов"
 
     - name: Run prometheus_install role
       include_role:
@@ -25,8 +29,8 @@
     - name: Reload UFW to apply changes
       command: ufw reload
 
-    - name: Reboot Ubuntu system
-      ansible.builtin.reboot:
-        msg: "Reboot initiated by Ansible after Prometheus setup."
-        reboot_timeout: 3
-      ignore_errors: yes
+    #- name: Reboot Ubuntu system
+     # ansible.builtin.reboot:
+      #  msg: "Reboot initiated by Ansible after Prometheus setup."
+       # reboot_timeout: 3
+      #ignore_errors: yes

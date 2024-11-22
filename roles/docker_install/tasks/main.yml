@@ -1,0 +1,55 @@
+---
+- name: Проверка, установлен ли Docker
+  command: docker --version
+  ignore_errors: yes
+  register: docker_check
+
+- name: Установка зависимостей для Docker
+  apt:
+    name:
+      - ca-certificates
+      - curl
+    state: present
+  when: docker_check.rc != 0
+
+- name: Создание директории для ключей APT
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  when: docker_check.rc != 0
+
+- name: Скачивание GPG-ключа Docker
+  get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+  when: docker_check.rc != 0
+
+- name: Добавление Docker репозитория в APT
+  shell: |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list
+  when: docker_check.rc != 0
+
+- name: Обновление apt-кэша
+  apt:
+    update_cache: yes
+  when: docker_check.rc != 0
+
+- name: Установка Docker и сопутствующих пакетов
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+  when: docker_check.rc != 0
+
+- name: Убедиться, что Docker запущен
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
