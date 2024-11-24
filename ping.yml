@@ -1,0 +1,11 @@
+---
+- name: Ping test hosts
+  hosts: all
+  tasks:
+    - name: Ping the target hosts
+      ping:
+      register: ping_result
+
+    - name: Answer
+      ansible.builtin.debug:
+        msg: "Ответ пинга: {{ ping_result }}"

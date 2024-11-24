@@ -28,9 +28,9 @@
   args:
     chdir: "{{ minecraft_dir }}"
   register: install_result
-  retries: 2  # Максимальное количество попыток для второй команды
-  delay: 2    # Задержка между попытками
-  until: install_result.rc == 0  # Условие успешного выполнения
+  retries: 2
+  delay: 2
+  until: install_result.rc == 0
   ignore_errors: true
 
 - name: Re-download Forge installer if running installer failed
@@ -41,17 +41,17 @@
   args:
     chdir: "{{ minecraft_dir }}"
   register: download_result
-  when: install_result.rc != 0  # Выполняется только если второе задание не удалось
+  when: install_result.rc != 0
 
 - name: Retry running Forge installer after re-download
   command: java -jar installer.jar --installServer
   args:
     chdir: "{{ minecraft_dir }}"
   register: install_result_retry
-  retries: 2  # Максимальное количество попыток для второго задания после повторного скачивания
-  delay: 2    # Задержка между попытками
-  until: install_result_retry.rc == 0  # Условие успешного выполнения
-  when: install_result.rc != 0  # Выполняется только если второе задание не удалось
+  retries: 2
+  delay: 2
+  until: install_result_retry.rc == 0
+  when: install_result.rc != 0
 
 - name: Final check if Forge installer succeeded
   debug:
@@ -110,20 +110,20 @@
         jid: "{{ server_run.ansible_job_id }}"
       register: job_result
       until: job_result.finished
-      retries: 10  # Количество попыток
-      delay: 6     # Задержка между попытками
+      retries: 10
+      delay: 6
       ignore_errors: true
 
   rescue:
     - name: Kill server if still running after timeout
       shell: kill -SIGTERM $(ps aux | grep '[s]erver.jar' | awk '{print $2}')
-      when: not job_result.finished  # Выполняется только если задача не завершилась
-      ignore_errors: true  # Игнорируем ошибки, если процесса нет
+      when: not job_result.finished
+      ignore_errors: true
 
     - name: Notify if second server run task was skipped due to timeout
       debug:
         msg: "Second server run task was skipped due to exceeding the 60-second timeout."
-      when: not job_result.finished  # Сообщение только если задача была пропущена
+      when: not job_result.finished
 
   always:
     - name: Ensure server is stopped
