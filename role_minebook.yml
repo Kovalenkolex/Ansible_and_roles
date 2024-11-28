@@ -2,8 +2,8 @@
 - name: Setup Minecraft Server
   hosts: mine
   become: yes
-  handlers:
-    - include_tasks: handlers/restart_ufw.yml
+#  handlers:
+ #   - include_tasks: handlers/restart_ufw.yml
 
   tasks:
     - name: Run ubuntu_setup role
