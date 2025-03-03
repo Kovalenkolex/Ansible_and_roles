@@ -64,3 +64,9 @@
 - name: Display Node Exporter version
   debug:
     msg: "{{ node_exporter_version_output.stdout }}"
+
+- name: Allow port 9100 via UFW
+  ufw:
+    rule: allow
+    port: 9100
+    proto: tcp

@@ -1,0 +1,21 @@
+---
+- name: Установка пакета tzdata
+  apt:
+    name: tzdata
+    state: present
+    update_cache: yes
+
+- name: Настройка временной зоны
+  timezone:
+    name: "{{ timezone }}"
+
+- name: Проверка наличия службы cron
+  stat:
+    path: /usr/sbin/cron
+  register: cron_service
+
+- name: Перезапуск службы cron (если установлен)
+  service:
+    name: cron
+    state: restarted
+  when: cron_service.stat.exists
