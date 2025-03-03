@@ -1,0 +1,11 @@
+---
+- name: Get ready BY server
+  hosts: by
+  become: yes
+
+  roles:
+    - role: ubuntu_setup
+    - role: docker_install
+    - role: docker-compose_install
+    - role: node_exporter_install
+    - role: timezone_set
