@@ -1,0 +1,64 @@
+---
+- name: Check if Docker is installed
+  command: docker --version
+  register: docker_version
+  ignore_errors: yes
+
+- name: Fail if Docker is not installed
+  fail:
+    msg: "Docker is not installed. Please install Docker manually."
+  when: docker_version.rc != 0
+
+- name: Ensure Docker is installed
+  apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+  when: docker_version.rc != 0
+
+- name: Ensure Docker Compose is installed
+  apt:
+    name: docker-compose
+    state: present
+
+- name: Pull AdGuard Home image
+  docker_image:
+    name: adguard/adguardhome
+    source: pull
+
+- name: Create AdGuard configuration directory
+  file:
+    path: /opt/adguardhome/conf
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create AdGuard data directory
+  file:
+    path: /opt/adguardhome/data
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Run AdGuard Home container
+  docker_container:
+    name: adguardhome
+    image: adguard/adguardhome
+    state: started
+    restart_policy: always
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "67:67/udp"
+      - "68:68/udp"
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "853:853/tcp"
+      - "3000:3000/tcp"
+    volumes:
+      - /opt/adguardhome/conf:/opt/adguardhome/conf
+      - /opt/adguardhome/data:/opt/adguardhome/data
+    env:
+      TZ: "Europe/Moscow"

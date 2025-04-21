@@ -1,0 +1,47 @@
+---
+- name: Отобразить выбранную версию Python
+  debug:
+    msg: "Устанавливаемая версия Python: {{ python_version }}"
+
+- name: Проверить текущую версию Python
+  command: python3 --version
+  register: python_version_current
+  changed_when: false
+  ignore_errors: true
+
+- name: Проверить, установлена ли целевая версия Python
+  command: "python{{ python_version }} --version"
+  register: python_target_installed
+  changed_when: false
+  ignore_errors: true
+
+- name: Удалить текущую версию Python, если она не соответствует целевой
+  apt:
+    name: "python3"
+    state: absent
+    force: yes
+  when: >
+    python_version_current.stdout is not defined or
+    'Python ' + python_version not in python_version_current.stdout
+
+- name: Установить целевую версию Python
+  apt:
+    name:
+      - "python{{ python_version }}"
+      - "python{{ python_version }}-dev"
+      - "python{{ python_version }}-venv"
+    state: present
+    update_cache: yes
+  when: >
+    python_target_installed.rc != 0 or
+    python_version_current.stdout is not defined or
+    'Python {{ python_version }}' not in python_version_current.stdout
+
+- name: Убедиться, что python3 указывает на целевую версию
+  alternatives:
+    name: python3
+    path: "/usr/bin/python{{ python_version }}"
+    priority: 100
+  when: >
+    python_target_installed.rc == 0 or
+    'Python {{ python_version }}' in python_version_current.stdout

@@ -1,0 +1,20 @@
+---
+- name: Check if Docker Compose is installed
+  command: /usr/local/bin/docker-compose --version
+  register: docker_compose_check
+  ignore_errors: yes
+
+- name: Install Docker Compose if not present
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64"
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+  when: docker_compose_check.failed
+
+- name: Verify Docker Compose installation
+  command: /usr/local/bin/docker-compose --version
+  register: docker_compose_version_check
+
+- name: Output Docker Compose version
+  debug:
+    msg: "Docker Compose version: {{ docker_compose_version_check.stdout }}"

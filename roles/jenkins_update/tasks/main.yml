@@ -1,0 +1,42 @@
+---
+- name: Убедиться, что установлены необходимые пакеты
+  apt:
+    name:
+      - curl
+      - wget
+    state: present
+  become: yes
+
+- name: Скачать указанную версию Jenkins
+  get_url:
+    url: "https://updates.jenkins.io/download/war/{{ jenkins_version }}/jenkins.war"
+    dest: "/tmp/jenkins-latest.war"
+    mode: "0644"
+  become: yes
+
+- name: Переименовать текущую версию Jenkins в jenkins_old.war
+  command: >
+    mv {{ jenkins_war_path }} {{ jenkins_old_path }}
+  args:
+    removes: "{{ jenkins_war_path }}"
+  become: yes
+
+- name: Установить новую версию Jenkins
+  copy:
+    src: "/tmp/jenkins-latest.war"
+    dest: "{{ jenkins_war_path }}"
+    remote_src: yes
+    mode: "0644"
+  become: yes
+
+- name: Перезапустить Jenkins
+  service:
+    name: jenkins
+    state: restarted
+  become: yes
+
+- name: Удалить временный файл
+  file:
+    path: "/tmp/jenkins-latest.war"
+    state: absent
+  become: yes

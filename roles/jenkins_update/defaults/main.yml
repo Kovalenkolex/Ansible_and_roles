@@ -1,0 +1,10 @@
+---
+# Путь к текущему файлу jenkins.war
+jenkins_war_path: "/usr/share/java/jenkins.war"
+
+# Путь для сохранения старой версии jenkins.war
+jenkins_old_path: "/usr/share/java/jenkins_old.war"
+
+# Версия Jenkins для скачивания
+jenkins_version: "2.504"
+

@@ -1,0 +1,7 @@
+---
+compose_file_path: "/opt/docker-app"  # Путь, где будут храниться файлы на клиенте
+docker_compose_version: "1.29.2"      # Версия Docker Compose, которую нужно установить
+nginx_conf_path: "/opt/docker-app/nginx/nginx.conf"  # Путь к nginx.conf
+nginx_container_name: "docker-app_nginx_1"  # Имя контейнера с Nginx
+script_path: "/usr/local/bin/nginx-monitor.sh"
+service_name: "nginx-monitor"
