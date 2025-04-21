@@ -1,6 +1,6 @@
 ---
-- name: Get ready BY server
-  hosts: by
+- name: Get ready Fin server
+  hosts: fin
   become: yes
 
   roles:
@@ -9,3 +9,25 @@
     - role: docker-compose_install
     - role: node_exporter_install
     - role: timezone_set
+
+  tasks:
+    - name: Allow necessary ports through UFW
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop:
+        - 3000    # Grafana
+        - 5000    # API
+
+    - name: Close port 9100
+      ufw:
+        rule: allow
+        port: 9100
+        proto: tcp
+        delete: yes
+
+    - name: Create PUBG_Helper directory
+      ansible.builtin.file:
+        path: /opt/PUBG_Helper
+        state: directory

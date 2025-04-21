@@ -38,3 +38,11 @@
     line: 'PasswordAuthentication no'
     state: present
   notify: restart_ssh
+
+- name: Enable public key authentication in SSH config
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PubkeyAuthentication\s+'
+    line: 'PubkeyAuthentication yes'
+    state: present
+  notify: restart_ssh
