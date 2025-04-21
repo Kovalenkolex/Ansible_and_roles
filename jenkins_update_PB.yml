@@ -1,0 +1,7 @@
+---
+- name: Jenkins update
+  hosts: local
+  become: yes
+
+  roles:
+    - role: jenkins_update
