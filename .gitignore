@@ -1,0 +1,12 @@
+/*
+!.gitignore
+!/jenkins_update_PB.yml
+!minebook.yml
+!ping.yml
+!ansible.cfg
+!README.md
+!prometheus.yml
+!role_minebook.yml
+!/roles
+!grafana.yml
+!by_setup.yml
